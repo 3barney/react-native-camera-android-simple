@@ -24,6 +24,7 @@ import java.util.Date;
 
 public class ImageFileUtils {
     private static final String TAG = ImageFileUtils.class.getSimpleName();
+		private static final String NOMEDIA=".nomedia";
 
     public static void saveBitmapToFile(Bitmap bitmap, File file) {
         FileOutputStream fos = null;
@@ -44,15 +45,36 @@ public class ImageFileUtils {
     }
 
     public static File getImageOutputFile() {
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+				File storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Smala");
 
         // Create the storage directory if it does not exist
         if (!storageDir.exists()) {
             if (!storageDir.mkdirs()) {
                 Log.e(TAG, "failed to create directory:" + storageDir.getAbsolutePath());
                 return null;
+            } else {
+								File noMediaFile = new File(storageDir + "/" + NOMEDIA);
+		              if (!noMediaFile.exists()) {
+		                  try {
+		                      boolean newFile = noMediaFile.createNewFile();
+		                      Log.i(TAG, ".no media File creation: " + newFile);
+		                  } catch (IOException e) {
+		                      Log.e(TAG, "failed to create File:" + e.toString());
+		                  }
+		              }
+						}
+        } else {
+						// storage Dir exists
+            File noMediaFile = new File(storageDir + "/" + NOMEDIA);
+            if (!noMediaFile.exists()) {
+                try {
+                    boolean newFile = noMediaFile.createNewFile();
+                    Log.i(TAG, ".no media File creation: " + newFile);
+                } catch (IOException e) {
+                    Log.e(TAG, "failed to create File:" + e.toString());
+                }
             }
-        }
+				}
 
         // Create a media file name
         String fileName = String.format("%s", new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
@@ -65,19 +87,7 @@ public class ImageFileUtils {
         final WritableMap response = new WritableNativeMap();
         response.putString("path", Uri.fromFile(imageFile).toString());
 
-        // borrowed from react-native CameraRollManager, it finds and returns the 'internal'
-        // representation of the image uri that was just saved.
-        // e.g. content://media/external/images/media/123
-        MediaScannerConnection.scanFile(
-                context,
-                new String[]{imageFile.getAbsolutePath()},
-                null,
-                new MediaScannerConnection.OnScanCompletedListener() {
-                    @Override
-                    public void onScanCompleted(String path, Uri uri) {
-                        promise.resolve(response);
-                    }
-                });
+        promise.resolve(response);
     }
 
     public static String validatePath(String filePath) {
